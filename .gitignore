@@ -1,0 +1,29 @@
+# Archivos y directorios a ignorar en Git
+
+# Configuración local
+config/database.php
+
+# Directorios de logs y uploads
+logs/
+uploads/
+
+# Archivos temporales de PHP
+*.log
+*.tmp
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos de contraseñas (seguridad)
+reset_passwords.php
+
+# Cache de Composer (si se usa en el futuro)
+vendor/
+composer.lock
