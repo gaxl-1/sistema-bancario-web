@@ -46,6 +46,8 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/chatbot.css">
+    <link rel="stylesheet" href="../assets/css/chatbot.css">
 </head>
 <body>
     <div class="dashboard-container">
@@ -160,6 +162,45 @@ try {
                                 <?php echo formatearDinero($stats['saldo_total'] ?? 0); ?>
                             </div>
                             <small class="text-muted">En el sistema</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saldos de Servicios -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 text-primary">
+                                        <i class="bi bi-bank"></i> Saldos de Proveedores de Servicios
+                                    </h5>
+                                    <span class="badge bg-primary rounded-pill">
+                                        Total: <?php echo formatearDinero(obtenerTotalServicios()); ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <?php 
+                                    $saldos_servicios = obtenerSaldosServicios(); 
+                                    foreach ($saldos_servicios as $servicio):
+                                    ?>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light hover-shadow text-center">
+                                            <div class="fs-1 mb-2"><?php echo $servicio['icono']; ?></div>
+                                            <div class="fw-bold text-dark"><?php echo $servicio['nombre_servicio']; ?></div>
+                                            <div class="h5 text-primary mb-0 mt-2">
+                                                <?php echo formatearDinero($servicio['saldo'], $servicio['moneda']); ?>
+                                            </div>
+                                            <small class="text-muted" style="font-size: 0.7rem;">
+                                                <?php echo $servicio['numero_cuenta']; ?>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -332,5 +373,6 @@ try {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/chatbot.js"></script>
 </body>
 </html>

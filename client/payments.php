@@ -29,69 +29,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mensaje = $validacion;
                 $tipo_mensaje = "danger";
             } else {
-                try {
-                    $db = getDB();
-                    $db->beginTransaction();
-                    
-                    // Obtener cuenta
-                    $stmt = $db->prepare("SELECT saldo, estado FROM cuentas WHERE id_cuenta = ? FOR UPDATE");
-                    $stmt->execute([$id_cuenta]);
-                    $cuenta = $stmt->fetch();
-                    
-                    if ($cuenta['estado'] !== 'activa') {
-                        throw new Exception("La cuenta no está activa");
-                    }
-                    
-                    if ($cuenta['saldo'] < $monto) {
-                        throw new Exception("Saldo insuficiente");
-                    }
-                    
-                    // Generar referencia
-                    $referencia = generarReferencia('PAG');
-                    
-                    // Actualizar saldo
-                    $stmt = $db->prepare("UPDATE cuentas SET saldo = saldo - ? WHERE id_cuenta = ?");
-                    $stmt->execute([$monto, $id_cuenta]);
-                    
-                    // Registrar transacción
-                    $descripcion = "Pago de $tipo_servicio - Ref: $referencia_servicio";
-                    $stmt = $db->prepare("
-                        INSERT INTO transacciones (
-                            id_cuenta_origen, tipo_transaccion, monto, descripcion, 
-                            referencia, estado, saldo_origen_anterior, saldo_origen_nuevo, ip_origen
-                        ) VALUES (?, 'pago_servicio', ?, ?, ?, 'completada', ?, ?, ?)
-                    ");
-                    $stmt->execute([
-                        $id_cuenta,
-                        $monto,
-                        $descripcion,
-                        $referencia,
-                        $cuenta['saldo'],
-                        $cuenta['saldo'] - $monto,
-                        obtenerIP()
-                    ]);
-                    
-                    registrarAuditoria(
-                        $_SESSION['usuario_id'],
-                        'Pago de servicio',
-                        'transacciones',
-                        null,
-                        "Servicio: $tipo_servicio, Monto: $monto"
-                    );
-                    
-                    $db->commit();
-                    $mensaje = "Pago realizado exitosamente";
-                    $tipo_mensaje = "success";
-                    
-                } catch (Exception $e) {
-                    $db->rollBack();
-                    $mensaje = $e->getMessage();
+                // Obtener cuenta de destino del servicio
+                $id_cuenta_destino = obtenerIdCuentaServicio($tipo_servicio);
+                
+                if (!$id_cuenta_destino) {
+                    $mensaje = "Servicio no disponible temporalmente";
                     $tipo_mensaje = "danger";
-                } catch (PDOException $e) {
-                    $db->rollBack();
-                    $mensaje = "Error al procesar el pago";
-                    $tipo_mensaje = "danger";
-                    error_log("Error en pago: " . $e->getMessage());
+                } else {
+                    try {
+                        $db = getDB();
+                        
+                        // Llamar al procedimiento almacenado
+                        $stmt = $db->prepare("CALL realizar_transferencia(?, ?, ?, ?, ?, @resultado, @referencia)");
+                        $descripcion = "Pago de $tipo_servicio - Ref: $referencia_servicio";
+                        $ip = obtenerIP();
+                        
+                        $stmt->bindParam(1, $id_cuenta, PDO::PARAM_INT);
+                        $stmt->bindParam(2, $id_cuenta_destino, PDO::PARAM_INT);
+                        $stmt->bindParam(3, $monto, PDO::PARAM_STR);
+                        $stmt->bindParam(4, $descripcion, PDO::PARAM_STR);
+                        $stmt->bindParam(5, $ip, PDO::PARAM_STR);
+                        
+                        $stmt->execute();
+                        $stmt->closeCursor();
+                        
+                        // Obtener resultados
+                        $result = $db->query("SELECT @resultado AS resultado, @referencia AS referencia")->fetch();
+                        
+                        if (strpos($result['resultado'], 'ÉXITO') !== false) {
+                            $mensaje = "Pago realizado exitosamente";
+                            $tipo_mensaje = "success";
+                            $referencia = $result['referencia'];
+                            
+                            // Auditoría adicional específica de pagos
+                            registrarAuditoria(
+                                $_SESSION['usuario_id'],
+                                'Pago de servicio',
+                                'transacciones',
+                                null,
+                                "Servicio: $tipo_servicio, Monto: $monto, Ref: $referencia"
+                            );
+                        } else {
+                            // Extraer mensaje de error
+                            $error_msg = str_replace('ERROR: ', '', $result['resultado']);
+                            throw new Exception($error_msg);
+                        }
+                        
+                    } catch (Exception $e) {
+                        $mensaje = $e->getMessage();
+                        $tipo_mensaje = "danger";
+                    } catch (PDOException $e) {
+                        $mensaje = "Error al procesar el pago";
+                        $tipo_mensaje = "danger";
+                        error_log("Error en pago: " . $e->getMessage());
+                    }
                 }
             }
         }
@@ -109,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/chatbot.css">
 </head>
 <body>
     <div class="dashboard-container">
@@ -270,5 +262,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/chatbot.js"></script>
 </body>
 </html>

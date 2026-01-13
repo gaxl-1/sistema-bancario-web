@@ -16,7 +16,7 @@ CREATE TABLE usuarios (
     nombre_usuario VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
-    rol ENUM('cliente', 'administrador') DEFAULT 'cliente',
+    rol ENUM('cliente', 'administrador', 'sistema') DEFAULT 'cliente',
     estado ENUM('activo', 'bloqueado', 'pendiente') DEFAULT 'pendiente',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ultimo_acceso TIMESTAMP NULL,
@@ -59,7 +59,7 @@ CREATE TABLE cuentas (
     id_cuenta INT AUTO_INCREMENT PRIMARY KEY,
     id_cliente INT NOT NULL,
     numero_cuenta VARCHAR(24) UNIQUE NOT NULL,
-    tipo_cuenta ENUM('ahorro', 'corriente', 'nomina') DEFAULT 'ahorro',
+    tipo_cuenta ENUM('ahorro', 'corriente', 'nomina', 'servicio') DEFAULT 'ahorro',
     saldo DECIMAL(15, 2) DEFAULT 0.00,
     moneda VARCHAR(3) DEFAULT 'EUR',
     estado ENUM('activa', 'bloqueada', 'cerrada') DEFAULT 'activa',
@@ -173,14 +173,33 @@ INSERT INTO usuarios (nombre_usuario, email, contrasena, rol, estado) VALUES
 INSERT INTO usuarios (nombre_usuario, email, contrasena, rol, estado) VALUES
 ('cliente_demo', 'cliente@demo.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'cliente', 'activo');
 
+-- Insertar usuario sistema para cuentas de servicios
+INSERT INTO usuarios (nombre_usuario, email, contrasena, rol, estado) VALUES
+('sistema', 'sistema@bancoseguro.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'sistema', 'activo');
+
 -- Datos del cliente demo
 INSERT INTO clientes (id_usuario, nombres, apellidos, documento_identidad, tipo_documento, fecha_nacimiento, telefono, direccion, ciudad, codigo_postal, verificado) VALUES
 (2, 'Juan Carlos', 'García López', '12345678A', 'DNI', '1990-05-15', '+34 600 123 456', 'Calle Mayor 123', 'Madrid', '28001', TRUE);
+
+-- Datos del cliente sistema (proveedores de servicios)
+INSERT INTO clientes (id_usuario, nombres, apellidos, documento_identidad, tipo_documento, fecha_nacimiento, telefono, verificado) VALUES
+(3, 'Sistema', 'Proveedores de Servicios', 'SISTEMA001', 'DNI', '2000-01-01', '+34 000 000 000', TRUE);
 
 -- Cuentas del cliente demo
 INSERT INTO cuentas (id_cliente, numero_cuenta, tipo_cuenta, saldo, estado) VALUES
 (1, 'ES7921000813610123456789', 'corriente', 5000.00, 'activa'),
 (1, 'ES7921000813610987654321', 'ahorro', 15000.00, 'activa');
+
+-- Cuentas de servicios (proveedores)
+INSERT INTO cuentas (id_cliente, numero_cuenta, tipo_cuenta, saldo, estado, limite_diario) VALUES
+(2, 'ES7921000813610001111111', 'servicio', 0.00, 'activa', 999999.00),  -- Electricidad
+(2, 'ES7921000813610002222222', 'servicio', 0.00, 'activa', 999999.00),  -- Agua
+(2, 'ES7921000813610003333333', 'servicio', 0.00, 'activa', 999999.00),  -- Gas
+(2, 'ES7921000813610004444444', 'servicio', 0.00, 'activa', 999999.00),  -- Teléfono
+(2, 'ES7921000813610005555555', 'servicio', 0.00, 'activa', 999999.00),  -- Internet
+(2, 'ES7921000813610006666666', 'servicio', 0.00, 'activa', 999999.00),  -- TV Cable
+(2, 'ES7921000813610007777777', 'servicio', 0.00, 'activa', 999999.00),  -- Seguro
+(2, 'ES7921000813610008888888', 'servicio', 0.00, 'activa', 999999.00);  -- Otro
 
 -- =====================================================
 -- VISTAS ÚTILES
@@ -204,6 +223,39 @@ SELECT
 FROM cuentas c
 INNER JOIN clientes cl ON c.id_cliente = cl.id_cliente
 INNER JOIN usuarios u ON cl.id_usuario = u.id_usuario;
+
+-- Vista de saldos de servicios
+CREATE VIEW vista_saldos_servicios AS
+SELECT 
+    c.id_cuenta,
+    c.numero_cuenta,
+    c.saldo,
+    c.moneda,
+    CASE 
+        WHEN c.numero_cuenta = 'ES7921000813610001111111' THEN 'Electricidad'
+        WHEN c.numero_cuenta = 'ES7921000813610002222222' THEN 'Agua'
+        WHEN c.numero_cuenta = 'ES7921000813610003333333' THEN 'Gas'
+        WHEN c.numero_cuenta = 'ES7921000813610004444444' THEN 'Teléfono'
+        WHEN c.numero_cuenta = 'ES7921000813610005555555' THEN 'Internet'
+        WHEN c.numero_cuenta = 'ES7921000813610006666666' THEN 'TV Cable'
+        WHEN c.numero_cuenta = 'ES7921000813610007777777' THEN 'Seguro'
+        WHEN c.numero_cuenta = 'ES7921000813610008888888' THEN 'Otro'
+        ELSE 'Desconocido'
+    END AS nombre_servicio,
+    CASE 
+        WHEN c.numero_cuenta = 'ES7921000813610001111111' THEN '⚡'
+        WHEN c.numero_cuenta = 'ES7921000813610002222222' THEN '💧'
+        WHEN c.numero_cuenta = 'ES7921000813610003333333' THEN '🔥'
+        WHEN c.numero_cuenta = 'ES7921000813610004444444' THEN '📞'
+        WHEN c.numero_cuenta = 'ES7921000813610005555555' THEN '🌐'
+        WHEN c.numero_cuenta = 'ES7921000813610006666666' THEN '📺'
+        WHEN c.numero_cuenta = 'ES7921000813610007777777' THEN '🛡️'
+        WHEN c.numero_cuenta = 'ES7921000813610008888888' THEN '📋'
+        ELSE '❓'
+    END AS icono
+FROM cuentas c
+WHERE c.tipo_cuenta = 'servicio'
+ORDER BY c.numero_cuenta;
 
 -- Vista de transacciones con detalles
 CREATE VIEW vista_transacciones_detalladas AS

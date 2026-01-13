@@ -10,22 +10,22 @@ Aplicación bancaria completa desarrollada con PHP, MySQL, HTML, CSS y JavaScrip
 - ✅ Sistema de autenticación seguro
 - ✅ Información sobre servicios
 
-### Para Clientes
-- ✅ Dashboard personalizado
-- ✅ Gestión de múltiples cuentas
-- ✅ Transferencias entre cuentas propias
-- ✅ Transferencias a terceros
-- ✅ Historial de transacciones
-- ✅ Pago de servicios
-- ✅ Gestión de perfil
-- ✅ Cambio de contraseña
+### 💳 Módulo de Cliente
+- Dashboard personal con resumen financiero
+- Gestión de múltiples cuentas
+- **Transferencias entre cuentas propias y a terceros**
+- **Pagos de Servicios (con cuentas de recaudo dedicadas)**
+- Historial de transacciones detallado
+- Perfil de usuario editable
+- **Asistente Virtual (Chatbot 24/7)**
 
-### Para Administradores
-- ✅ Panel de administración
-- ✅ Gestión de usuarios (CRUD)
-- ✅ Monitoreo de transacciones
-- ✅ Registro de auditoría
-- ✅ Reportes y estadísticas
+### 🛡️ Módulo Administrativo
+- Dashboard general con métricas clave
+- **Visualización de Saldos de Proveedores de Servicios**
+- Gestión de usuarios (activación, bloqueo)
+- Monitoreo de todas las transacciones
+- Auditoría completa de acciones
+- Reportes del sistema
 - ✅ Bloqueo/desbloqueo de cuentas
 
 ### Seguridad

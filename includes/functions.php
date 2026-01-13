@@ -330,4 +330,73 @@ function paginar($total_registros, $registros_por_pagina = 10, $pagina_actual = 
         'offset' => $offset
     ];
 }
+
+/**
+ * Obtener número de cuenta de servicio por tipo
+ */
+function obtenerCuentaServicio($tipo_servicio) {
+    $cuentas_servicios = [
+        'Electricidad' => 'ES7921000813610001111111',
+        'Agua' => 'ES7921000813610002222222',
+        'Gas' => 'ES7921000813610003333333',
+        'Teléfono' => 'ES7921000813610004444444',
+        'Internet' => 'ES7921000813610005555555',
+        'TV Cable' => 'ES7921000813610006666666',
+        'Seguro' => 'ES7921000813610007777777',
+        'Otro' => 'ES7921000813610008888888'
+    ];
+    
+    return $cuentas_servicios[$tipo_servicio] ?? null;
+}
+
+/**
+ * Obtener ID de cuenta de servicio por tipo
+ */
+function obtenerIdCuentaServicio($tipo_servicio) {
+    $numero_cuenta = obtenerCuentaServicio($tipo_servicio);
+    
+    if (!$numero_cuenta) {
+        return null;
+    }
+    
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT id_cuenta FROM cuentas WHERE numero_cuenta = ?");
+        $stmt->execute([$numero_cuenta]);
+        $resultado = $stmt->fetch();
+        return $resultado ? $resultado['id_cuenta'] : null;
+    } catch (PDOException $e) {
+        error_log("Error al obtener ID de cuenta de servicio: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Obtener saldos de todas las cuentas de servicios
+ */
+function obtenerSaldosServicios() {
+    try {
+        $db = getDB();
+        $stmt = $db->query("SELECT * FROM vista_saldos_servicios ORDER BY numero_cuenta");
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
+        error_log("Error al obtener saldos de servicios: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Obtener monto total en cuentas de servicios
+ */
+function obtenerTotalServicios() {
+    try {
+        $db = getDB();
+        $stmt = $db->query("SELECT SUM(saldo) as total FROM cuentas WHERE tipo_cuenta = 'servicio'");
+        $resultado = $stmt->fetch();
+        return $resultado ? $resultado['total'] : 0;
+    } catch (PDOException $e) {
+        error_log("Error al obtener total de servicios: " . $e->getMessage());
+        return 0;
+    }
+}
 ?>
